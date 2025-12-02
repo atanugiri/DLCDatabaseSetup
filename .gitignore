@@ -1,0 +1,50 @@
+# Python
+*.pyc
+__pycache__/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+anaconda_projects/
+
+# VS Code settings
+.vscode/
+
+# Environment files
+env/
+venv/
+.venv/
+.DS_Store
+
+# Files
+*.log
+*.aux
+*.fls
+*.synctex.gz
+*.docx
+
+# Keep CSV files tracked
+*.csv
+
+# System files
+Thumbs.db
+
+# Folders
+# keep `data/` tracked (CSV metadata lives here). Do NOT add raw videos to the repo.
+
+# System specific notebook
+DLC-Jupyter-Notebooks/10_DLCjupyter.ipynb
+
+# Large files
+GhrelinBehaviorQuantification-backup-20251022-164321.tar.gz
+
+# Ignore common video formats so large raw videos are not accidentally committed
+*.mp4
+*.MP4
+*.avi
+*.AVI
+*.mov
+*.MOV
+*.mkv
+*.MKV
+*.m4v
+*.flv
