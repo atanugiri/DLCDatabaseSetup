@@ -39,3 +39,30 @@ def parse_video_name(video_name):
     name = pattern.group("name")
 
     return task, date_str, name, health
+
+
+# --- Main Test Block ----------------------------------------------------------
+
+if __name__ == "__main__":
+    import sys
+    
+    # Get test video name from user or use a default example
+    if len(sys.argv) > 1:
+        test_video_name = sys.argv[1]
+    else:
+        # Default test example
+        test_video_name = "FoodOnly_7_29_25_S1Y_Celery.mp4"
+        print(f"No input provided. Testing with example: {test_video_name}\n")
+    
+    # Parse the video name
+    task, date_str, name, health = parse_video_name(test_video_name)
+    
+    if task:
+        print(f"Parsed results:")
+        print(f"  Task:   {task}")
+        print(f"  Date:   {date_str}")
+        print(f"  Animal: {name}")
+        print(f"  Health: {health}")
+    else:
+        print(f"Failed to parse: {test_video_name}")
+        print(f"Expected format: Task_MM_DD_YY_HealthCode_AnimalName.mp4")
