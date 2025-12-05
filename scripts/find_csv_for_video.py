@@ -24,16 +24,16 @@ def find_csv_for_video(video_name, csv_dirs):
     stem = Path(video_name).stem  # Remove file extension
     pattern = f"{stem}DLC*_filtered.csv"  # Pattern to match DLC CSV files
     
+    project_root = Path(__file__).parent.parent
     for csv_dir in csv_dirs:
         csv_path = Path(csv_dir)
         if not csv_path.exists():
             continue
-        
         # Search recursively for matching CSV
         matches = list(csv_path.rglob(pattern))
         if matches:
-            return str(matches[0])
-    
+            # Return path relative to project root
+            return str(matches[0].relative_to(project_root))
     return None
 
 
