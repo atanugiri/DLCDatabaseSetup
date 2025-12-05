@@ -61,7 +61,7 @@ if __name__ == "__main__":
     import random
     
     # Setup paths
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parent.parent
     data_dir = project_root / "data"
     video_dirs = [
         data_dir / "SplitVideos" / "WhiteAnimals10X",
