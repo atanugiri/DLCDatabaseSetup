@@ -21,24 +21,6 @@ from find_csv_for_video import find_csv_for_video
 from determine_genotype import determine_genotype
 
 
-def determine_genotype(video_path):
-    """
-    Determine genotype based on directory structure.
-    
-    Args:
-        video_path: Path to video file
-    
-    Returns:
-        'white' or 'black' based on parent directory
-    """
-    path_str = str(video_path).lower()
-    if 'whiteanimals' in path_str:
-        return 'white'
-    elif 'blackanimals' in path_str:
-        return 'black'
-    return None
-
-
 def generate_dlc_table(output_path=None):
     """
     Generate dlc_table.csv from WhiteAnimals split videos only.
