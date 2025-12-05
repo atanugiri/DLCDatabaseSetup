@@ -18,7 +18,7 @@ from parse_video_name import parse_video_name
 from extract_maze_number import load_mother_videos, build_prefix_to_animal_map, get_maze_number
 from video_info import get_video_info
 from find_csv_for_video import find_csv_for_video
-from determine_genotype import determine_genotype
+from extract_genotype_and_dose import extract_genotype_and_dose
 
 
 def generate_dlc_table(output_path=None):
@@ -90,8 +90,8 @@ def generate_dlc_table(output_path=None):
         # Find DLC CSV file
         csv_file_path = find_csv_for_video(video_name, csv_dirs)
         
-        # Determine genotype
-        genotype = determine_genotype(video_path)
+        # Extract genotype and dose_mult
+        genotype, dose_mult = extract_genotype_and_dose(video_path)
         
         # Create record
         record = {
@@ -109,7 +109,7 @@ def generate_dlc_table(output_path=None):
             'modulation': modulation,
             'maze': maze,
             'csv_file_path': csv_file_path,
-            'dose_mult': None,  # To be filled in later if needed
+            'dose_mult': dose_mult,
             'center': None,     # To be filled in later if needed
         }
         
