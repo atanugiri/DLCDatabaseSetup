@@ -126,56 +126,6 @@ def get_maze_number(split_video_name, prefix_to_animals):
     return None
 
 
-def update_maze_numbers_csv(csv_path, prefix_to_animals, output_csv=None):
-    """
-    Read CSV with video_name column, compute maze_number from the filename,
-    and save to output CSV. If output_csv is None, overwrites input.
-    
-    Prints a clear sanity line for each update.
-    
-    Returns: Updated DataFrame
-    """
-    # Read the CSV
-    df = pd.read_csv(csv_path)
-    
-    # Check required columns
-    if 'video_name' not in df.columns:
-        raise ValueError("CSV must have 'video_name' column")
-    
-    # Add maze column if it doesn't exist
-    if 'maze' not in df.columns:
-        df['maze'] = None
-    
-    # Update maze numbers
-    for idx, row in df.iterrows():
-        video_name = row['video_name']
-        
-        maze_number = get_maze_number(video_name, prefix_to_animals)
-        
-        if maze_number is not None:
-            df.at[idx, 'maze'] = int(maze_number)
-            
-            # Print sanity check
-            stem_clean = _strip_quadrant_suffix(_strip_trial_suffix(Path(video_name).stem))
-            prefix = _prefix_from_stem(stem_clean)
-            animals = prefix_to_animals.get(prefix, [])
-            if animals:
-                mother_video = f"{prefix}_{'_'.join(animals)}.mp4"
-            else:
-                mother_video = "(mother not found in map)"
-            
-            print(f"[✓] {video_name} → {mother_video} → maze {maze_number}")
-        else:
-            print(f"[✗] {video_name} → maze number not found")
-    
-    # Save output
-    output_path = output_csv if output_csv else csv_path
-    df.to_csv(output_path, index=False)
-    print(f"\n✅ Maze number update complete. Saved to: {output_path}")
-    
-    return df
-
-
 # --- Main Test Block ----------------------------------------------------------
 
 if __name__ == "__main__":
