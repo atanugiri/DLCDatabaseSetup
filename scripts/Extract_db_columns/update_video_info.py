@@ -1,66 +1,100 @@
-import os
+"""
+Extract video metadata (frame count, FPS, dimensions) using OpenCV.
+Simple utility functions for video file information.
+"""
+
 import cv2
-import psycopg2
-import pandas as pd
-import platform
+from pathlib import Path
 
 
-def find_video_path(video_name, base_video_dir, subdir):
-    # for subdir in video_subdirs:
-    folder = os.path.join(base_video_dir, subdir, 'SplitVideos')
-    candidate = os.path.join(folder, video_name)
-    if os.path.isfile(candidate):
-        return candidate
+def find_video_path(video_name, video_dirs):
+    """
+    Search for a video file in multiple directories.
+    
+    Args:
+        video_name: The video filename to find
+        video_dirs: List of directory paths to search
+    
+    Returns:
+        Full path to video if found, None otherwise
+    """
+    for video_dir in video_dirs:
+        video_path = Path(video_dir)
+        # Search recursively
+        for video_file in video_path.rglob(video_name):
+            if video_file.is_file():
+                return str(video_file)
     return None
 
+
 def get_video_info(video_path):
+    """
+    Extract video metadata using OpenCV.
+    
+    Args:
+        video_path: Full path to video file
+    
+    Returns:
+        Tuple of (num_frames, frame_rate, width, height) or (None, None, None, None) if failed
+    """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         return None, None, None, None
+    
     num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_rate = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
+    
     return num_frames, frame_rate, width, height
 
-def update_video_info_in_db(conn, base_video_dir, subdir):
-    cursor = conn.cursor()
+
+# --- Main Test Block ----------------------------------------------------------
+
+if __name__ == "__main__":
+    import sys
+    import random
     
-    # Select incomplete rows
-    query = """
-        SELECT id, video_name FROM dlc_table
-        WHERE num_frames IS NULL OR frame_rate IS NULL OR video_width IS NULL OR video_height IS NULL;
-    """
-    df = pd.read_sql_query(query, conn)
-
-    updates = []
-    for _, row in df.iterrows():
-        video_id = row['id']
-        video_name = row['video_name']
-        path = find_video_path(video_name, base_video_dir, subdir)
-
-        if path:
-            num_frames, frame_rate, width, height = get_video_info(path)
-            if None not in (num_frames, frame_rate, width, height):
-                print(f"ID {video_id}: {video_name} — {num_frames} frames, {frame_rate:.2f} fps, {width}x{height}")
-                updates.append((num_frames, frame_rate, width, height, video_id))
-            else:
-                print(f"Could not read metadata: {video_name}")
-        else:
-            print(f"File not found: {video_name}")
-
-    # Batch update
-    if updates:
-        cursor.executemany("""
-            UPDATE dlc_table
-            SET num_frames = %s,
-                frame_rate = %s,
-                video_width = %s,
-                video_height = %s
-            WHERE id = %s;
-        """, updates)
-        conn.commit()
-        print(f"\nUpdated {len(updates)} rows.")
+    # Setup paths
+    project_root = Path(__file__).parent.parent.parent
+    data_dir = project_root / "data"
+    video_dirs = [
+        data_dir / "SplitVideos" / "WhiteAnimals10X",
+        data_dir / "SplitVideos" / "WhiteAnimals2X",
+    ]
+    
+    # Get test video: from user input or random selection
+    if len(sys.argv) > 1:
+        test_video_name = sys.argv[1]
     else:
-        print("No updates made.")
+        # Find a random video
+        all_videos = []
+        for vdir in video_dirs:
+            all_videos.extend(list(Path(vdir).rglob("*.mp4")))
+        
+        if not all_videos:
+            print("No videos found in SplitVideos directory!")
+            sys.exit(1)
+        
+        test_video = random.choice(all_videos)
+        test_video_name = test_video.name
+    
+    print(f"Testing with video: {test_video_name}\n")
+    
+    # Find and extract video info
+    video_path = find_video_path(test_video_name, video_dirs)
+    
+    if video_path:
+        print(f"Found: {video_path}\n")
+        num_frames, frame_rate, width, height = get_video_info(video_path)
+        
+        if None not in (num_frames, frame_rate, width, height):
+            print(f"Video metadata:")
+            print(f"  Frames:     {num_frames}")
+            print(f"  Frame rate: {frame_rate:.2f} fps")
+            print(f"  Dimensions: {width}x{height}")
+        else:
+            print("Failed to read video metadata")
+    else:
+        print(f"Video not found: {test_video_name}")
