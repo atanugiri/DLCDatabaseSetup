@@ -35,11 +35,12 @@ def get_video_info(video_path):
         video_path: Full path to video file
     
     Returns:
-        Tuple of (num_frames, frame_rate, width, height) or (None, None, None, None) if failed
+        Tuple of (num_frames, frame_rate, width, height, trial_length) or (None, None, None, None, None) if failed
+        trial_length is calculated as num_frames / frame_rate in seconds
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return None, None, None, None
+        return None, None, None, None, None
     
     num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_rate = cap.get(cv2.CAP_PROP_FPS)
@@ -47,7 +48,10 @@ def get_video_info(video_path):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     cap.release()
     
-    return num_frames, frame_rate, width, height
+    # Calculate trial length in seconds
+    trial_length = num_frames / frame_rate if frame_rate and frame_rate > 0 else None
+    
+    return num_frames, frame_rate, width, height, trial_length
 
 
 # --- Main Test Block ----------------------------------------------------------
@@ -87,13 +91,14 @@ if __name__ == "__main__":
     
     if video_path:
         print(f"Found: {video_path}\n")
-        num_frames, frame_rate, width, height = get_video_info(video_path)
+        num_frames, frame_rate, width, height, trial_length = get_video_info(video_path)
         
-        if None not in (num_frames, frame_rate, width, height):
+        if None not in (num_frames, frame_rate, width, height, trial_length):
             print(f"Video metadata:")
-            print(f"  Frames:     {num_frames}")
-            print(f"  Frame rate: {frame_rate:.2f} fps")
-            print(f"  Dimensions: {width}x{height}")
+            print(f"  Frames:       {num_frames}")
+            print(f"  Frame rate:   {frame_rate:.2f} fps")
+            print(f"  Dimensions:   {width}x{height}")
+            print(f"  Trial length: {trial_length:.2f} seconds")
         else:
             print("Failed to read video metadata")
     else:
