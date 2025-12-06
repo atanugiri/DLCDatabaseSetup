@@ -1,33 +1,27 @@
 # DLCDatabaseSetup
 
-A reusable pipeline for ingesting DeepLabCut (DLC) pose-estimation data into a PostgreSQL database.
+A reusable pipeline for ingesting DeepLabCut (DLC) pose-estimation data into a csv database.
 
 ## Overview
 
 This repository provides a modular workflow to:
-1. Process DLC output CSV files
-2. Extract metadata from video filenames
-3. Normalize body part coordinates
-4. Store pose data and metadata in a PostgreSQL database
+1. Extract metadata from video filenames
+2. Store pose data and metadata in a csv database
 
-The pipeline is designed to be experiment-agnostic and can be adapted for any DLC project.
 
 ## Repository Structure
 
 ```
 DLCDatabaseSetup/
 ├── notebooks/                      # Jupyter notebooks for database setup
-│   ├── 10_DLCjupyter.ipynb        # DLC project setup
-│   ├── 20_set_up_deeplabcut_db.ipynb  # Database initialization
-│   ├── 21_insert_features_to_db.ipynb # Data ingestion (method 1)
-│   ├── 22_normalizedCSVs.ipynb    # Coordinate normalization
-│   └── 23_insert_features_to_db.ipynb # Data ingestion (method 2)
-├── scripts/                        # Python utility modules
-│   ├── Extract_db_columns/        # Metadata extraction functions
-│   ├── Insert_to_featuretable/    # Database insertion utilities
+│   ├── 10_DLCjupyter.ipynb        # Example notebook for exploration
+├── scripts/                        # Python utility modules used to build the CSV/database and ingest data
+│   ├── generate_dlc_table.py      # Create DLC CSV/table from raw data and metadata
+│   ├── parse_video_name.py        # Extract metadata from filenames
+│   ├── video_info.py              # Utilities for video metadata
 │   └── config.py                  # Database connection configuration
 ├── data/                           # Input CSV files (not tracked)
-├── environment.yml                 # Conda environment specification
+├── environment.yml       # Conda environment specification (name: `dlc-light`)
 └── requirements.txt                # Pip package list
 
 ```
@@ -36,29 +30,41 @@ DLCDatabaseSetup/
 
 ### 1. Environment Setup
 
-```bash
-# Create conda environment
-conda env create -f environment.yml
-conda activate DLC
+This repository uses a single conda environment file:
 
-# Or install with pip
+- `environment.yml` — the conda environment for this project (name: `dlc-light`).
+
+Create the environment and activate it (run in `zsh`):
+
+```bash
+conda env create --file environment.yml
+conda activate dlc-light
+```
+
+If you prefer to install additional Python-only packages with `pip` after activating the environment:
+
+```bash
 pip install -r requirements.txt
 ```
 
 ### 2. Database Configuration
 
-Edit `scripts/config.py` to configure your PostgreSQL connection:
+This project no longer uses PostgreSQL. The scripts generate and consume a CSV-backed "database" (a pandas DataFrame serialized to disk).
+
+Edit `scripts/config.py` to configure the output CSV path or other IO options. Example minimal config:
 
 ```python
-def get_conn():
-    return psycopg2.connect(
-        dbname="your_database_name",
-        user="your_username",
-        password="your_password",
-        host="your_host",
-        port="5432"
-    )
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+DLCTABLE_CSV = os.path.join(DATA_DIR, 'dlc_table.csv')
+
+def get_dlc_table_path():
+   return DLCTABLE_CSV
 ```
+
+Scripts will read/write `DLCTABLE_CSV` (a CSV representation of the pandas DataFrame).
 
 ### 3. Data Preparation
 
@@ -66,25 +72,32 @@ Place your DLC output CSV files in the `data/` directory. The expected format is
 
 ## Workflow
 
-1. **Initialize Database** (`20_set_up_deeplabcut_db.ipynb`)
-   - Creates `dlc_table` and related schemas
-   - Defines columns: id, video_name, task, modulation, etc.
+1. **Metadata extraction utilities** (`scripts/parse_video_name.py`, `scripts/extract_genotype_and_dose.py`, `scripts/extract_maze_number.py`, `scripts/video_info.py`, `scripts/find_csv_for_video.py`, etc.)
+   - These modules each extract pieces of metadata for a video:
+     - `parse_video_name.py`: task, modulation, date, animal name, health
+     - `extract_genotype_and_dose.py`: genotype and dose multiplier
+     - `extract_maze_number.py`: maze position (using mother/raw videos mapping)
+     - `video_info.py`: technical metadata (frame count, frame rate, dimensions, trial length)
+     - `find_csv_for_video.py`: locates the DLC tracking CSV and returns `csv_file_path`
+   - Most helper functions return metadata or paths (they do not perform aggregation).
 
-2. **Normalize Coordinates** (`22_normalizedCSVs.ipynb`)
-   - Converts pixel coordinates to normalized arena coordinates
-   - Applies coordinate transformations based on arena boundaries
+2. **Generate / inject CSV database** (`scripts/generate_dlc_table.py`)
+   - `generate_dlc_table.py` composes the metadata extracted by the helpers above and builds a consolidated table (a pandas DataFrame) with one row per trial.
+   - The script assigns an `id` column, collects `csv_file_path` links, and writes the consolidated CSV (default: `data/dlc_table.csv`).
+   - In short: the helper modules gather metadata; `generate_dlc_table.py` injects that metadata into the CSV-backed "database" (writes/updates `dlc_table.csv`).
 
-3. **Insert Data** (`21_insert_features_to_db.ipynb` or `23_insert_features_to_db.ipynb`)
-   - Ingests DLC CSV files into PostgreSQL
-   - Extracts metadata from video filenames
-   - Validates likelihood thresholds
+3. **Additional utilities** (`scripts/split_videos_by_quadrants.py`, `scripts/center_assign.py`, etc.)
+   - These scripts provide supporting functionality: video splitting helpers, center assignment rules, and other utilities used before or after generating the table.
+
+NOTE: This repository does not include a general-purpose coordinate-normalization module. Coordinate normalization / feature extraction is handled in downstream analysis (e.g., `GhrelinBehaviorQuantification`) or can be implemented on top of the generated `dlc_table.csv`.
 
 ## Output
 
-The pipeline produces a PostgreSQL database with the following structure:
+The primary output is a consolidated CSV `data/dlc_table.csv` (a pandas DataFrame serialized to disk) containing one row per trial with the collected metadata and links to the DLC tracking CSVs.
 
-- **dlc_table**: Metadata for each trial (id, task, modulation, video_path, etc.)
-- **pose tables**: Coordinate data for each body part (x, y, likelihood per frame)
+Typical columns include: `id`, `video_name`, `num_frames`, `frame_rate`, `trial_length`,
+`video_width`, `video_height`, `genotype`, `task`, `date`, `name`, `health`, `modulation`,
+`maze`, `csv_file_path`, `dose_mult`, and `center` (if assigned).
 
 ## Dependencies
 
@@ -100,16 +113,9 @@ See `requirements.txt` for full list.
 This repository provides the database foundation. For ghrelin-specific behavioral analysis, see:
 - [GhrelinBehaviorQuantification](https://github.com/atanugiri/GhrelinBehaviorQuantification)
 
-## Citation
-
-If you use this pipeline, please cite:
-- DeepLabCut: Mathis et al. (2018) Nature Neuroscience
-- This repository: [Add Zenodo DOI when available]
-
 ## License
 
-[Specify your license]
 
 ## Contact
 
-For questions or issues, please open a GitHub issue or contact [your email].
+For questions or issues, please open a GitHub issue or contact atanurkm11@gmail.com.

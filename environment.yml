@@ -17,5 +17,3 @@ dependencies:
   - notebook
   - jupyterlab
   - ipykernel
-
-# DeepLabCut and Windows-specific packages intentionally omitted.
