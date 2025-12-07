@@ -21,7 +21,7 @@ venv/
 *.fls
 *.synctex.gz
 *.docx
-*.zip
+*.zip*
 
 # Keep CSV files tracked
 *.csv

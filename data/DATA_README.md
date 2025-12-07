@@ -4,15 +4,17 @@ This directory contains raw and split video data for generating the trial metada
 
 ## Data Sources
 
-Download the video datasets from Harvard Dataverse:
+Download the video datasets from Harvard Dataverse (archives are large; we host split archives as multipart zip parts):
 
-1. **Raw Videos (4-quadrant recordings)**: [Animal Videos for 4 mazes in RECORD setup](https://doi.org/10.7910/DVN/SBH3UG)  
-   Citation: Giri, Atanu, 2025, "Animal Videos for 4 mazes in RECORD setup", Harvard Dataverse, V1
+1. **Raw Videos (4-quadrant recordings)**: [Animal Videos for 4 mazes in RECORD setup](https://doi.org/10.7910/DVN/SBH3UG)
+   - Citation: Giri, Atanu, 2025, "Animal Videos for 4 mazes in RECORD setup", Harvard Dataverse, V1
 
-2. **Split Videos (individual animals)**: [Videos for DLC analysis](https://doi.org/10.7910/DVN/F0P2BC)  
-   Citation: Giri, Atanu, 2025, "Videos for DLC analysis", Harvard Dataverse, V1
+2. **Split Videos (individual animals)**: [Videos for DLC analysis](https://doi.org/10.7910/DVN/F0P2BC)
+   - Citation: Giri, Atanu, 2025, "Videos for DLC analysis", Harvard Dataverse, V1
 
-**Note**: You do NOT need the DLC CSVs here. Those are used in the [GhrelinBehaviorQuantification](https://github.com/atanugiri/GhrelinBehaviorQuantification) repository for downstream analysis.
+Note: the raw video archives are very large. We typically upload multipart zip archives (e.g. `RawVideos.zip.part001`, `RawVideos.zip.part002`, ...). If you are downloading the multipart uploads you will need to concatenate the parts before extracting — see instructions below.
+
+**Also:** DLC tracking CSVs are stored/used in the `GhrelinBehaviorQuantification` repository for downstream analysis; this repo only contains the scripts and metadata CSV handlers.
 
 ## Setup Instructions
 
@@ -50,6 +52,18 @@ Download the video datasets from Harvard Dataverse:
            └── [tasks]/*.mp4
    ```
 
+Additional processed outputs (DLC CSVs) are expected to be organized under `data/DlcDataPytorchFiltered/` with the following layout:
+   ```
+   data/DlcDataPytorchFiltered/
+   ├── WhiteAnimals10X/
+   │   ├── FoodLight/
+   │   │   └── FoodLight_8_4_25_S1P_CauliflowerDLC_Resnet50_..._filtered.csv
+   │   └── FoodOnly/
+   │       └── FoodOnly_7_30_25_S1P_CauliflowerDLC_Resnet50_..._filtered.csv
+   └── WhiteAnimals2X/
+      └── ...
+   ```
+   
 ## Purpose
 
 This repository generates the **metadata** (`dlc_table.csv`) that maps:
@@ -58,10 +72,22 @@ This repository generates the **metadata** (`dlc_table.csv`) that maps:
 
 The generated CSV will have paths like:
 ```
-data/WhiteAnimals/ToyOnly/DlcDataPytorchFiltered/ToyOnlyInhibitory_2_27_25_S1P_FDLC_...filtered.csv
+data/DlcDataPytorchFiltered/WhiteAnimals10X/FoodOnly/FoodOnly_7_30_25_S1P_CauliflowerDLC_Resnet50_DLC-WhiteAnimalsJul23shuffle1_snapshot_060_filtered.csv
 ```
 
-These paths point to the DLC CSVs in the **GhrelinBehaviorQuantification** repository.
+These paths typically point to DLC CSVs produced by DeepLabCut and stored alongside the project outputs (often in the `GhrelinBehaviorQuantification` repository or a shared storage bucket).
+
+Concatenating and extracting multipart archives
+```
+# On a Unix-like system (macOS / Linux):
+# Concatenate parts in numeric order and unzip
+cat RawVideos.zip.part* > RawVideos.zip
+unzip RawVideos.zip
+
+# On Windows (cmd.exe):
+copy /b RawVideos.zip.part* RawVideos.zip
+powershell -Command "Expand-Archive -Path RawVideos.zip -DestinationPath ."
+```
 
 ## Filename Conventions
 
