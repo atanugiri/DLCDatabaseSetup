@@ -8,7 +8,6 @@ This repository provides a modular workflow to:
 1. Extract metadata from video filenames
 2. Store pose data and metadata in a csv database
 
-
 ## Repository Structure
 
 ```
@@ -23,7 +22,6 @@ DLCDatabaseSetup/
 ├── data/                           # Input CSV files (not tracked)
 ├── environment.yml       # Conda environment specification (name: `dlc-light`)
 └── requirements.txt                # Pip package list
-
 ```
 
 ## Setup
@@ -102,9 +100,7 @@ Typical columns include: `id`, `video_name`, `num_frames`, `frame_rate`, `trial_
 ## Dependencies
 
 - Python 3.8+
-- DeepLabCut 2.3.9
-- PostgreSQL
-- Key packages: pandas, numpy, psycopg2, scipy
+- Key packages: pandas, numpy, scipy
 
 See `requirements.txt` for full list.
 
@@ -112,9 +108,6 @@ See `requirements.txt` for full list.
 
 This repository provides the database foundation. For ghrelin-specific behavioral analysis, see:
 - [GhrelinBehaviorQuantification](https://github.com/atanugiri/GhrelinBehaviorQuantification)
-
-## License
-
 
 ## Contact
 
