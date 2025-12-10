@@ -26,7 +26,7 @@ import os
 import math
 import sys
 
-DEFAULT_MAX_GB = 2.5
+DEFAULT_MAX_GB = 2.3
 
 
 def split_file(input_path: Path, max_bytes: int):
